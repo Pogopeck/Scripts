@@ -1,0 +1,29 @@
+name: Copy file from Nexus to server with wget
+
+on:
+  workflow_dispatch
+
+jobs:
+  copy:
+    runs-on: self-hosted
+    env:
+      URL: https://deployvip.dc-ratingen.de:8080/nexus/#browse/browse
+    steps:
+      - name: Download Nexus artifact
+        run: |
+          pwd
+          wget --no-check-certificate --user ${{ secrets.NEXUS_USERNAME }} --password ${{ secrets.NEXUS_PASSWORD }} -O test_bundle.zip $URL --no-proxy
+          scp test_bundle.zip cal09@decr47hr:/home/cal09/pogo/cramer/
+          rm test_bundle.zip
+        working-directory: /home/nsstools/CRAMER
+      - name: Extract and deploy 
+        run: |
+        pwd
+          ssh cal09@decr47hr << EOF
+          pwd
+          cd /home/cal09/pogo/cramer/
+          unzip test_bundle.zip
+          ls -lrt
+          rm test_bundle.zip
+          EOF 
+        
