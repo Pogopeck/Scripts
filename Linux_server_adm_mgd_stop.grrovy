@@ -1,0 +1,81 @@
+pipeline {
+    agent { // This is nsstools agent that will ssh to AL ARM 46 & 47
+        node {
+            label 'de6723yr-nsstools'
+        }
+    }
+    stages {
+        stage('STOP All the Application Servers') {
+            parallel {
+                stage('STOP ARM 46 & 47') {
+                    steps {
+                        sh '''
+                        ssh cal09@decr46hr << EOF
+                        cd /home/cal09/pogo
+                        ./stopManaged.sh
+                        
+                        EOF
+        
+                        ssh cal09@decr47hr << EOF
+                        cd /home/cal09/pogo
+                        ./admin_managed_stop.sh
+                        
+                        EOF
+                        
+                        echo $?
+                        '''
+                }
+            }
+                stage('STOP DOP 46 & 47') {
+                    steps {
+                        sh '''
+                        ssh cal09_du@decr47hr << EOF
+                        cd /home/cal09_du/pogo
+                        ./stopManaged.sh
+                        
+                        EOF
+        
+                        ssh cal09_du@decr46hr << EOF
+                        cd /home/cal09_du/pogo
+                        ./admin_managed_stop.sh
+                        
+                        EOF
+                        
+                        echo $?
+                        '''
+                }
+            }
+                stage('STOP IWS 46 & 47') {
+                    steps {
+                        sh '''
+                        ssh cal09_w1@decr47hr << EOF
+                        cd /home/cal09_w1/pogo
+                        ./stopManaged.sh
+                        
+                        EOF
+        
+                        ssh cal09_w1@decr46hr << EOF
+                        cd /home/cal09_w1/pogo
+                        ./admin_managed_stop.sh
+                        
+                        EOF
+                        
+                        echo $?
+                        '''
+                    }
+                }
+            }
+        }
+    }
+    post {
+        always {
+            emailext (
+                subject: 'AL Application servers are stopped',
+                body: 'The Jenkins pipeline has completed successfully.',
+                to: 'chandan.sahoo@vodafone.com',
+                attachLog: true
+            )
+        }
+    }
+}
+  
